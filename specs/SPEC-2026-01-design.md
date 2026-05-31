@@ -1,9 +1,23 @@
 # Design: AWSome Painting & Decorating — Marketing Site (SPEC-2026-01)
 
 **Spec**: [SPEC-2026-01-awsome-painting-netlify-site.md](SPEC-2026-01-awsome-painting-netlify-site.md)
-**Status**: Draft (awaiting approval)
+**Status**: Approved
 **Author**: architect subagent
+**Reviewed by**: reviewer subagent (2026-05-31) — adversarial critic pass; all findings folded in (see Review history)
 **Created**: 2026-05-31
+
+---
+
+## Review history
+
+The `reviewer` subagent did an adversarial critic pass on this design before approval. Verdict: sound, with fixes applied:
+
+- **B1 (blocking)** — ADR-02/§6 disagreed on the form POST target (`/` vs `/contact`). Unified on `action="/"` for both the JS `fetch` and the no-JS native submit.
+- **B2 (blocking)** — `new URLSearchParams(formData as any)` would break `tsc --noEmit` (AC-08) and violate the no-`any` rule. Replaced with a typed body built from the Zod-parsed `ContactValues`.
+- **S1** — direct-hit 404 servability wasn't owned by a task. ADR-06 now mandates verifying `dist/client/404.html` (T2) with a `status=404` redirects fallback (T3).
+- **S2** — CSP framing made dropping `script-src 'unsafe-inline'` look likely; it isn't (inline hydration-state script). Reframed as the expected, necessary baseline.
+- **S3** — Prettier devDependency now explicitly pre-authorized by the Approved spec (NFR-04).
+- **S4 / nits** — preserve `source('../')` in `app.css`; `z.email()` (not deprecated `z.string().email()`); `Button` typed as a discriminated union, not an intersection.
 
 ---
 
@@ -38,14 +52,14 @@ We are turning the bare `start-tailwind-v4` TanStack scaffold under `web-app/` i
 
 ### Config / source delta
 - **`web-app/vite.config.ts`** — has `tanstackStart()`, `viteReact()`, `tailwindcss()`, port 3000, `resolve.tsconfigPaths: true`. **No prerender/SPA config.** MUST add the `prerender`/`pages` config to `tanstackStart()` to emit static HTML and avoid a deployed server. There is **no `app.config.ts`** in this TanStack Start version — all Start config lives in this Vite plugin call. The design doc and tasks must target `vite.config.ts`, NOT `app.config.ts`.
-- **`web-app/package.json`** — `build` is `vite build && tsc --noEmit` (good, satisfies the build gate). There is a leftover `start: node .output/server/index.mjs` script implying an SSR server — should be removed (no server runtime). **No `format:check` script and no Prettier dependency** are present, yet AC-09/NFR-04 require `npm run format:check` to pass. Prettier must be added as a devDependency and the script added (this is a tooling dependency the spec explicitly mandates — justify in PR per the no-new-deps rule).
+- **`web-app/package.json`** — `build` is `vite build && tsc --noEmit` (good, satisfies the build gate). There is a leftover `start: node .output/server/index.mjs` script implying an SSR server — should be removed (no server runtime). **No `format:check` script and no Prettier dependency** are present, yet AC-09/NFR-04 require `npm run format:check` to pass. Prettier must be added as a devDependency and the script added. **This devDependency is pre-authorized**: the Approved spec mandates it (NFR-04/AC-09 require `npm run format:check` to pass), which satisfies CLAUDE.md's "propose dependency additions" gate — the coder may add it in T1 without a separate chat approval, and notes it in the PR description.
 - **`web-app/netlify.toml`** — machine-generated: absolute `publish = "/opt/build/repo/web-app/dist/client"`, `base = "/opt/build/repo/web-app"`, `publishOrigin`/`commandOrigin`/`headersOrigin`/`redirectsOrigin = "config"`, a `@netlify/plugin-emails` plugin + `[functions.emails]` block, `command = "vite build"` (does NOT match package.json's build+typecheck). MUST be rewritten: relative `publish = "dist/client"`, `command = "npm run build"`, drop all `*Origin` keys, drop the emails plugin/functions blocks, keep `[dev]` on port matching 3000, add NFR-05 headers. (Note: scaffold `[dev].port = 8888` / `targetPort = 3000` is Netlify Dev's proxy; we standardize on documenting Vite's 3000.)
 - **`web-app/tsconfig.json`** — `strict: true`, `~/*` → `src/*` alias, `noEmit`, `moduleResolution: Bundler`. No change needed.
 - **`web-app/src/router.tsx`** — `getRouter()` with `defaultPreload: 'intent'`, `scrollRestoration: true`. Keep; add `defaultNotFoundComponent` only if we choose the not-found route strategy in ADR-06.
 - **`web-app/src/routes/__root.tsx`** — minimal shell: `<html>`/`<head HeadContent/>`/`<body>`, a single Home `<Link>`, **`<TanStackRouterDevtools>` rendered unconditionally** (must become dev-only — AC-14), `<Scripts/>`. MUST be expanded into the real Header + `<Outlet/>` + Footer shell and add document `<head>` meta (lang, viewport, title).
 - **`web-app/src/routes/index.tsx`** — placeholder "Welcome Home!!!". MUST become the real Home page.
 - **`web-app/src/routeTree.gen.ts`** — auto-generated, only knows `/`. Regenerates on dev/build when new route files are added. Never hand-edit.
-- **`web-app/src/styles/app.css`** — Tailwind v4 entry (`@import 'tailwindcss'`) with a light/dark base layer. **No brand theme tokens.** Extend here with `@theme` brand palette + typographic tokens (FR-04).
+- **`web-app/src/styles/app.css`** — Tailwind v4 entry; first line is `@import 'tailwindcss' source('../');` (the `source('../')` sets the content-scan root — **must be preserved** when T4 adds tokens) plus a light/dark base layer. **No brand theme tokens.** Extend here with `@theme` brand palette + typographic tokens (FR-04); do not remove or alter the `source('../')` directive.
 - **`web-app/public/`** — does not exist. Create for favicon and any imagery (FU-03 supplies real images later; use lightweight placeholders/SVG in v1).
 - **No `.prettierrc`** — only `.prettierignore` (already excludes `routeTree.gen.ts`, `build`, `public`). Add a `.prettierrc` so formatting is deterministic across machines.
 
@@ -76,25 +90,25 @@ We are turning the bare `start-tailwind-v4` TanStack scaffold under `web-app/` i
 ### ADR-02: Netlify Forms strategy — statically rendered uncontrolled form with progressive client-side Zod validation
 - **Context:** FR-03/AC-06/AC-07 require: (a) the `contact` form present in prerendered HTML for build-time detection; (b) native POST degradation if JS fails; (c) accessible client-side Zod validation; (d) an accessible success state. The known gotcha: a React-controlled form whose markup is generated only at runtime is invisible to Netlify's static crawler, and `data-netlify` attributes are sometimes stripped/ignored by JSX frameworks.
 - **Options considered:**
-  1. **Single uncontrolled native `<form>`** with `name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field"`, a hidden `<input type="hidden" name="form-name" value="contact" />`, and a hidden honeypot `bot-field`. JS adds an `onSubmit` that runs Zod, and on success POSTs `application/x-www-form-urlencoded` via `fetch` to the same origin (`/`), then shows an inline success panel. With JS off, the browser performs the native POST and Netlify serves its default success page. Pro: one form in HTML, detected at build, degrades natively, validates client-side. Con: must be careful to keep inputs uncontrolled (use `defaultValue`/`FormData`) so static markup is complete.
+  1. **Single uncontrolled native `<form>`** with `name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/"`, a hidden `<input type="hidden" name="form-name" value="contact" />`, and a hidden honeypot `bot-field`. JS adds an `onSubmit` that runs Zod, and on success POSTs `application/x-www-form-urlencoded` via `fetch` to the form's own `action` (`/`), then shows an inline success panel. With JS off, the browser performs the native POST to the same `action` and Netlify serves its default success page. Pro: one form in HTML, detected at build, degrades natively, validates client-side; the JS and no-JS paths hit the **identical** URL. Con: must be careful to keep inputs uncontrolled (use `defaultValue`/`FormData`) so static markup is complete.
   2. **A separate static hidden HTML form for detection + a controlled React form for UX.** Pro: clean separation. Con: duplication, drift risk, and the controlled form still needs the hidden `form-name`; more moving parts for no benefit at this scale. **Rejected.**
   3. **Redirect to a Netlify default thank-you page** instead of inline success. Pro: trivial. Con: full page reload, weaker UX, and loses the SPA feel; spec allows either but inline is better and still degrades. **Chosen as the no-JS fallback only**, with inline success as the JS path.
-- **Decision:** Option 1. The `ContactForm` is presentational and **uncontrolled** for field values (read via `FormData` on submit); React state holds only validation errors and submit status (`idle | submitting | success | error`). On submit: `preventDefault`, parse `FormData` with the Zod schema; on failure set field errors (wired via `aria-invalid` + `aria-describedby`); on success build a URL-encoded body (including `form-name=contact`) and `await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body })`, then switch to the success panel. The `<form>` always carries the static Netlify attributes so it works with JS disabled.
+- **Decision:** Option 1. The `<form>` has `action="/"` and JS POSTs to that **same** URL — both the JS `fetch` and the no-JS native submit target `/` (the guaranteed-present `dist/client/index.html`); Netlify accepts the form POST at that path because `form-name=contact` is in the body. The `ContactForm` is presentational and **uncontrolled** for field values (read via `FormData` on submit); React state holds only validation errors and submit status (`idle | submitting | success | error`). On submit: `preventDefault`, parse `FormData` with the Zod schema; on failure set field errors (wired via `aria-invalid` + `aria-describedby`); on success build a **typed** URL-encoded body from the Zod-parsed values (no `as any` — see §6) and `await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body })`, then switch to the success panel. The `<form>` always carries the static Netlify attributes so it works with JS disabled.
 - **Consequences:** The form is detected at deploy (AC-06) and works without JS (FR-03). Inputs being uncontrolled means validation is on-submit (not per-keystroke) — acceptable and simpler; a future enhancement could add blur validation. Verification of detection + a real submission is a manual deploy-preview step (AC-06) and cannot be confirmed by the build gate alone — called out in Risks.
 
-### ADR-03: Content-Security-Policy without `'unsafe-inline'` for scripts; documented extension points
-- **Context:** NFR-05/AC-13 require a CSP whose value contains `default-src 'self'`, permits Netlify Forms (same-origin POST) and the Tailwind stylesheet, and documents future extension points (fonts, analytics, reCAPTCHA). Tailwind v4 is compiled to a **linked stylesheet** (`~/styles/app.css?url` in `__root.tsx` head), not inline styles, so `style-src 'self'` is feasible. TanStack Start hydration injects a small inline bootstrap script via `<Scripts/>`, which typically needs either `'unsafe-inline'` or a nonce/hash for `script-src`. Since this is a static deploy with no server to mint per-request nonces, hashing is the principled route but is brittle across builds.
+### ADR-03: Content-Security-Policy (pragmatic `script-src 'unsafe-inline'` for hydration state); documented extension points
+- **Context:** NFR-05/AC-13 require a CSP whose value contains `default-src 'self'`, permits Netlify Forms (same-origin POST) and the Tailwind stylesheet, and documents future extension points (fonts, analytics, reCAPTCHA). In the **production** build Tailwind v4 is compiled to a **linked stylesheet** (`~/styles/app.css?url` in `__root.tsx` head), not inline styles, so prod `style-src 'self'` is plausible (the CSP is enforced only via the deployed `netlify.toml` headers — dev, where `@tailwindcss/vite` injects inline `<style>`, is unaffected). **However, TanStack Start serializes dehydrated router/loader state into an inline `<script>` read at hydration** (via `<Scripts/>`), so `script-src` is **expected to require `'unsafe-inline'`**, not optionally. Because this is a static deploy with no server to mint per-request nonces, and because a present `'unsafe-inline'` makes any `'nonce-'`/`'sha256-'` ignored anyway, hash/nonce approaches are not viable while also shipping inline state.
 - **Options considered:**
-  1. **`script-src 'self'`** only. Pro: strictest. Con: TanStack Start's inline hydration script would be blocked, breaking client routing. **Rejected unless** verified that the installed version emits only external scripts.
-  2. **`script-src 'self' 'unsafe-inline'`.** Pro: guaranteed to work with the framework's inline bootstrap. Con: weakens script protection. The spec says avoid `'unsafe-inline'` "where practical"; for a static no-server site, scripts are author-controlled and there is no user-generated content, so the residual risk is low.
-  3. **Hash-based `script-src 'self' 'sha256-...'`.** Pro: strict and inline-compatible. Con: hashes change every build, requiring a regeneration step the lean v1 toolchain doesn't have; high maintenance. **Rejected for v1.**
+  1. **`script-src 'self'`** only. Pro: strictest. Con: TanStack Start's inline hydration-state script would be blocked, breaking hydration/client routing. **Rejected** — the inline state script makes this infeasible.
+  2. **`script-src 'self' 'unsafe-inline'`.** Pro: works with the framework's inline hydration-state script. Con: weakens script protection. The spec says avoid `'unsafe-inline'` "where practical"; for a static no-server site, scripts are author-controlled and there is no user-generated content, so the residual risk is low. **Chosen** — this is the expected, necessary baseline, not a fallback.
+  3. **Hash-based `script-src 'self' 'sha256-...'`.** Pro: strict and inline-compatible in principle. Con: hashes change every build (no regeneration step in lean v1); and once `'unsafe-inline'` is present for the state script, hashes are ignored anyway. **Rejected for v1.**
 - **Decision:** Ship this baseline in `netlify.toml`:
   ```
   Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
   ```
-  Rationale per directive: `form-action 'self'` permits the Netlify same-origin POST; `style-src 'self'` covers the compiled Tailwind stylesheet (no inline styles in our components — Tailwind utilities only, per CLAUDE.md); `img-src 'self' data:` allows local images and inline SVG data URIs; `connect-src 'self'` allows the `fetch` POST. `script-src` keeps `'unsafe-inline'` only for the framework's hydration bootstrap (ADR-03 option 2); the coder MUST verify during T-headers whether the installed Start version actually needs it (if hydration works under `script-src 'self'`, tighten it and drop `'unsafe-inline'`).
+  Rationale per directive: `form-action 'self'` permits the Netlify same-origin POST; `style-src 'self'` covers the **prod** compiled Tailwind stylesheet (no inline styles in our components — Tailwind utilities only, per CLAUDE.md); `img-src 'self' data:` allows local images and inline SVG data URIs; `connect-src 'self'` allows the `fetch` POST. `script-src` keeps `'unsafe-inline'` for the framework's inline hydration-state script. **T3 verification = confirm the site hydrates with this CSP, AND inspect `dist/client` HTML to confirm `style-src 'self'` holds (no framework-emitted inline `<style>`/`style=` in prod output).** Only attempt to drop `'unsafe-inline'` from `script-src` if a build inspection shows zero inline `<script>` — which is not expected; do not burn a coder loop chasing it.
 - **Extension points (documented in `netlify.toml` comments):** fonts → add host to `font-src` (+ `style-src` if using a hosted CSS); analytics → add host to `script-src` + `connect-src`; reCAPTCHA (FU-04) → add `https://www.google.com https://www.gstatic.com` to `script-src` and `frame-src`.
-- **Consequences:** AA-compatible, satisfies AC-13. `'unsafe-inline'` on `script-src` is the one concession; documented and revisitable. No `frame-src` until reCAPTCHA lands.
+- **Consequences:** AA-compatible, satisfies AC-13. `'unsafe-inline'` on `script-src` is the one expected concession (driven by inline hydration state); documented and revisitable. No `frame-src` until reCAPTCHA lands.
 
 ### ADR-04: Design system — copy-paste Tailwind v4 markup + small presentational primitives, zero new runtime deps
 - **Context:** FR-04 wants a modernized, cohesive look based on a free open-source Tailwind kit (HyperUI-style), with reusable presentational components. CLAUDE.md forbids new runtime UI dependencies.
@@ -118,7 +132,11 @@ We are turning the bare `start-tailwind-v4` TanStack scaffold under `web-app/` i
   1. **A TanStack catch-all route `src/routes/$.tsx`** rendering the NotFound page, included in prerender so Netlify serves real 404 HTML. Pro: matches CLAUDE.md file layout (`$.tsx`), works for direct-URL access, no rewrite hacks.
   2. **`notFoundComponent` on the root route only.** Con: covers client navigation but the static host needs an actual `404.html`/route to serve on direct hits; less explicit. **Rejected in favor of the file route**, though we may also set `defaultNotFoundComponent` to reuse the same component for unmatched client navigations.
 - **Decision:** Option 1 — `src/routes/$.tsx` rendering the shared `NotFound` page, plus reusing that component as the router's `defaultNotFoundComponent`. No catch-all 200 rewrite in `netlify.toml`.
-- **Consequences:** Direct hits to unknown paths render the friendly 404 (AC-05). Confirm during T2 that the prerender step emits the 404 HTML (some Start versions need an explicit `pages` entry or a `notFound` marker — verify; fall back to adding `{ path: '/404' }` if needed).
+- **Two distinct 404 paths, both must work:**
+  1. **Client navigation** to an unknown path (`/nope` reached via in-app link) → handled by `$.tsx` / `defaultNotFoundComponent` (T12). This is what AC-05's wording targets.
+  2. **Cold direct hit** to an unknown URL (`https://site/nope` typed/linked externally) → there is **no server** to run the router, so Netlify must serve a static `404.html` itself with a 404 status. Netlify serves `dist/client/404.html` automatically **if it exists**.
+- **404.html guarantee (closes the S1 gap):** Confirm during T2 that the prerender emits `dist/client/404.html`. If the installed Start version does **not** emit it from `$.tsx`/`crawlLinks`, add `{ path: '/404' }` to the prerender `pages` so a `404.html` is produced. As a last-resort fallback **only if no `404.html` can be emitted**, add a `[[redirects]]` rule in `netlify.toml` (T3) with `status = 404` (NOT 200) sending unknown paths to the 404 page — this preserves the correct status and never masks real prerendered routes.
+- **Consequences:** Both 404 paths render the friendly page (AC-05) and direct hits return a real 404 status (AC-04 semantics). The `404.html` emission is verified, not assumed; the redirects fallback is owned by T3, not left in prose.
 
 ---
 
@@ -134,7 +152,7 @@ All components in `web-app/src/components/` are presentational (props in, callba
 | `Hero` | `src/components/Hero.tsx` | `{ title: string; subtitle: string; ctaLabel: string; ctaTo: string }` | Home hero + "Get a Free Quote" CTA → `/contact` |
 | `SectionHeading` | `src/components/SectionHeading.tsx` | `{ eyebrow?: string; title: string; description?: string }` | Consistent section headers |
 | `ServiceCard` | `src/components/ServiceCard.tsx` | `{ service: Service }` | Icon/title/description; used in Home services highlight |
-| `Button` | `src/components/Button.tsx` | `{ variant?: 'primary' \| 'secondary' \| 'ghost'; size?: 'sm' \| 'md' \| 'lg'; as?: 'button' \| 'link'; to?: string } & ButtonHTMLAttributes` | Uses `tailwind-merge` for class merging; renders `<Link>` when `as='link'` |
+| `Button` | `src/components/Button.tsx` | **Discriminated union** on `as`: `({ as?: 'button' } & ButtonHTMLAttributes) \| ({ as: 'link'; to: string } & Omit<LinkProps,'children'>)`, plus shared `variant?: 'primary'\|'secondary'\|'ghost'; size?: 'sm'\|'md'\|'lg'` | Use a **discriminated union, NOT an intersection** of anchor+button attrs (an intersection conflicts under strict and tempts an `any` cast — AC-08). Uses `tailwind-merge` for class merging; renders `<Link>` when `as='link'` |
 | `ContactForm` | `src/components/ContactForm.tsx` | `{ services: Service[] }` | Netlify Forms form per ADR-02; owns local error/status state only |
 | `RouterDevtools` | `src/components/RouterDevtools.tsx` | none | Dev-only wrapper per ADR-05 |
 
@@ -167,7 +185,7 @@ All components in `web-app/src/components/` are presentational (props in, callba
   method="POST"
   data-netlify="true"
   netlify-honeypot="bot-field"
-  action="/contact"            // or "/" — same-origin success target
+  action="/"                   // same-origin POST target; JS and no-JS both POST here (ADR-02)
 >
   <input type="hidden" name="form-name" value="contact" />
   <p hidden>
@@ -185,16 +203,36 @@ import { z } from 'zod'
 
 export const ContactSchema = z.object({
   name: z.string().min(1, 'Please enter your name'),
-  email: z.string().min(1, 'Please enter your email').email('Enter a valid email'),
+  email: z.email('Enter a valid email'), // zod v4 top-level email (z.string().email() is deprecated in v4)
   phone: z.string().optional(),
   service: z.string().optional(),
   message: z.string().min(1, 'Please tell us about your project'),
 })
 export type ContactValues = z.infer<typeof ContactSchema>
 ```
-Submit path (JS on): `preventDefault` → `ContactSchema.safeParse(Object.fromEntries(new FormData(form)))` → on error map `error.issues` to per-field messages; on success `fetch(form.action, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(formData as any).toString() })` → set status `success`. JS off: native browser POST to Netlify.
 
-Note: zod is `^4.4.3` — `.email()` is the v4 string method (confirm `z.email()` vs `z.string().email()` against the installed v4 API during T-form; both exist in v4 lineage, coder uses whichever the installed types expose).
+**Submit path (JS on)** — type-clean, no `as any` (B2 fix, AC-08):
+```ts
+const result = ContactSchema.safeParse(Object.fromEntries(new FormData(form)))
+if (!result.success) {
+  // map result.error.issues → per-field messages (aria-invalid / aria-describedby)
+  return
+}
+// Build a typed body from PARSED values (all string | undefined) — never the raw FormData.
+const body = new URLSearchParams({ 'form-name': 'contact' })
+for (const [k, v] of Object.entries(result.data)) {
+  if (v !== undefined) body.set(k, v) // drops optional empty fields; no File values
+}
+await fetch('/', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: body.toString(),
+})
+// set status 'success'
+```
+Building the body from `result.data` (typed `ContactValues`) avoids passing `FormData` (whose values can be `File`) to `URLSearchParams`, so no cast is needed and `form-name=contact` is guaranteed present. **JS off:** native browser POST to `action="/"`.
+
+Note: zod is `^4.4.3` — use `z.email(...)` (top-level), not the deprecated `z.string().email()`. Confirm against the installed v4 types during T10.
 
 ---
 
@@ -205,8 +243,8 @@ Each task is one coder loop (<~200 LOC), ordered so `cd web-app && npm run build
 | Task | Title | Files | Depends on | ACs | Effort |
 |---|---|---|---|---|---|
 | **T1** | Tooling + version pin: add Prettier + `.prettierrc` + `format:check` script; pin `typescript` to `5.x`; remove dead `start` script | `web-app/package.json`, `web-app/.prettierrc` (NEW) | — | AC-08, AC-09 | S |
-| **T2** | Prerender + static config: add `prerender`/`pages` to `tanstackStart()` in `vite.config.ts`; verify `dist/client` static HTML for all routes + 404; confirm no server entry consumed | `web-app/vite.config.ts` | T1 | AC-01, AC-04, AC-05(partial) | M |
-| **T3** | `netlify.toml` rewrite: relative `publish="dist/client"`, `command="npm run build"`, drop `*Origin`/emails plugin/functions, `[dev]` port, NFR-05 headers + CSP (ADR-03) with documented extension points | `web-app/netlify.toml` | T2 | AC-12, AC-13 | M |
+| **T2** | Prerender + static config: add `prerender`/`pages` to `tanstackStart()` in `vite.config.ts`; verify `dist/client` static HTML for all routes; **explicitly confirm `dist/client/404.html` is emitted** (if not, add `{ path: '/404' }` to `pages`) (ADR-06); confirm no server entry consumed | `web-app/vite.config.ts` | T1 | AC-01, AC-04, AC-05(direct-hit) | M |
+| **T3** | `netlify.toml` rewrite: relative `publish="dist/client"`, `command="npm run build"`, drop `*Origin`/emails plugin/functions, `[dev]` port, NFR-05 headers + CSP (ADR-03) with documented extension points. **Verify the site hydrates under the CSP and that prod HTML has no inline `<style>`/`style=` (style-src 'self').** **Only if T2 could not emit `404.html`**, add a `status=404` `[[redirects]]` fallback (NOT 200) | `web-app/netlify.toml` | T2 | AC-12, AC-13 | M |
 | **T4** | Theme tokens: extend `app.css` with `@theme` brand palette + typographic scale (light/dark, AA contrast) | `web-app/src/styles/app.css` | T1 | AC-11(partial) | S |
 | **T5** | Data layer: `business.ts`, `services.ts`, `nav.ts` (+ optional `content.ts`) with types | `web-app/src/data/*.ts` | T1 | FR-01, FR-02 content | S |
 | **T6** | Primitives: `Button`, `SectionHeading` (+ `tailwind-merge` for Button) | `web-app/src/components/Button.tsx`, `SectionHeading.tsx` | T4 | AC-11 | S |

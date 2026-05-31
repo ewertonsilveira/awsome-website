@@ -141,6 +141,7 @@ See `.claude/agents/`:
 |---|---|
 | `requirements-analyst` | Turns vague tickets into structured, testable specs |
 | `architect` | ADRs, system design, dependency mapping, task breakdown |
+| `plan-reviewer` | Adversarial critic pass on a design doc before coding — AC coverage, factual claims, ADR soundness, task sequencing |
 | `coder` | Implements one task at a time against an approved spec |
 | `tester` | Generates and hardens test suites; validates coverage |
 | `reviewer` | Adversarial critic pass on every task diff and on the full PR |
