@@ -4,15 +4,37 @@ Skills are focused instruction files that teach AI agents **how to work with a s
 
 ---
 
+## Current Project Stack
+
+> This branch builds the **AWSome Painting & Decorating** marketing site (see `specs/SPEC-2026-01-awsome-painting-netlify-site.md`). Skills on this branch should target the stack below.
+
+| Area | Choice |
+|---|---|
+| UI framework | React 19 |
+| Meta-framework | TanStack Start — **static prerender** (no SSR runtime deployed) |
+| Router | TanStack Router (file-based routes, generated `routeTree.gen.ts`) |
+| Styling | Tailwind CSS v4 (`@tailwindcss/vite`) |
+| Build tool | Vite 8 → static output in `dist/client` |
+| Language | TypeScript 5.x (strict) |
+| Validation | Zod (client-side form validation) |
+| Contact form | Netlify Forms (no backend, no secrets) |
+| Lint/format | Prettier + `tsc --noEmit` (lean — no Vitest/ESLint/husky in v1) |
+| Package manager | npm |
+| Runtime | Node.js v24.3.0 |
+| Hosting / CD | Netlify (Git continuous deployment) |
+| App code lives in | `web-app/` |
+
+---
+
 ## What Is a Skill?
 
 A skill is a `SKILL.md` file inside `.claude/skills/<skill-name>/`. Agents load it on demand when they need to create or modify something that falls within that skill's domain. Think of it as a micro-playbook: not general conventions, but exact patterns, templates, and anti-patterns for one specific thing.
 
-**Examples of what a skill covers:**
-- How to create a Vue component and its Storybook story in this repo
-- How to add a new API endpoint in this FastAPI project
-- How to write a gRPC service handler in Go
-- How to scaffold a new pytest fixture suite
+**Examples of what a skill covers (this branch's stack):**
+- How to add a new TanStack Router file-based route + page in `web-app/src/routes/`
+- How to build a reusable presentational React component with Tailwind v4 in `web-app/src/components/`
+- How to wire a Netlify Forms form so it is detected in the prerendered HTML
+- How to configure TanStack Start static prerendering and the Netlify build output
 
 **Skills are NOT:**
 - General coding standards (those go in `CLAUDE.md`)
@@ -30,7 +52,7 @@ A skill is a `SKILL.md` file inside `.claude/skills/<skill-name>/`. Agents load 
     ├── <skill-name>/
     │   └── SKILL.md                       ← the skill definition
     └── example-vue-ts-vite-storybook/
-        └── SKILL.md                       ← example skill for Vue/TS/Vite/Storybook
+        └── SKILL.md                       ← generic reference template (Vue) — not this branch's stack
 ```
 
 ---
@@ -119,8 +141,7 @@ Before handing off, verify:
 
 > Update this table when you add a new skill.
 
-| Skill | Stack | Trigger |
-|---|---|---|
-| `example-vue-ts-vite-storybook` | Vue 3 + TypeScript + Vite + Storybook | Creating UI components, stories, composables, services |
-
-Add your stack's skills here after branching.
+| Skill | Stack | Trigger | Status |
+|---|---|---|---|
+| `react-tanstack-netlify` | React 19 + TanStack Start + Tailwind v4 + Netlify | Creating/modifying routes, components, the contact form, or Netlify/prerender config | **Active** |
+| `example-vue-ts-vite-storybook` | Vue 3 + TypeScript + Vite + Storybook | Generic reference template only — **not** this branch's stack | Reference |

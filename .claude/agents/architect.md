@@ -47,40 +47,38 @@ You translate approved specs into a concrete technical design that a coding agen
 ## Touched Files
 | File | Change | Why |
 |---|---|---|
-| `src/composables/useFoo.ts` | NEW | Encapsulate X logic |
-| `src/stores/bar.ts` | MODIFY | Add Y state |
+| `web-app/src/components/ServiceCard.tsx` | NEW | Reusable service card component |
+| `web-app/src/data/services.ts` | MODIFY | Add service descriptions |
 
-## API / Contract Changes
-- **New types** (Zod schemas in `src/types/`):
+## Type / Contract Changes
+- **New Zod schemas / TypeScript types** (in `web-app/src/data/` or `web-app/src/components/`):
   ```ts
-  export const FooSchema = z.object({ ... })
-  export type Foo = z.infer<typeof FooSchema>
+  export const ContactSchema = z.object({ name: z.string().min(1), ... })
+  export type ContactFormValues = z.infer<typeof ContactSchema>
   ```
-- **HTTP endpoints**: <method, path, request, response>
-- **Events / messages**: <if applicable>
+- **New routes**: file path in `web-app/src/routes/`, TanStack Router path, component
 
 ## Task Breakdown (for /implement)
-1. **T1** [coder]: Add `FooSchema` and types in `src/types/foo.ts` + tests.
-2. **T2** [coder]: Implement `useFoo` composable + unit tests.
-3. **T3** [coder]: Wire into `FooView.vue` + component tests.
-4. **T4** [tester]: Add E2E happy path + failure path in `e2e/foo.spec.ts`.
-5. **T5** [reviewer]: Critic pass on the full diff.
+1. **T1** [coder]: <single concern, max ~200 LOC>
+2. **T2** [coder]: <next concern>
+3. **T3** [reviewer]: Critic pass on the full diff.
 
-Each task: max 200 LOC, single concern, independently testable.
+Each task: max ~200 LOC, single concern, independently verifiable by building.
 
 ## Risks & Mitigations
 - <Risk>: <mitigation>
 
 ## Rollback Plan
-<How to disable/revert if this ships and breaks.>
+<How to revert if this ships and breaks — typically: revert the commit, re-deploy.>
 ```
 
 ## Rules
 1. **No new top-level dependencies** without explicit user approval. Propose, don't install.
-2. **Prefer composables over classes**. Vue 3 idioms win.
+2. **Prefer hooks and functional components**. React 19 idioms: `useState`, `useReducer`, custom hooks. No class components.
 3. **One ADR per non-obvious decision**. Skip ADRs for "we used the existing pattern."
-4. **Tasks must be linear**. If two tasks could happen in parallel, that's fine, but the order in the doc is the execution order if done sequentially.
+4. **Tasks must be linear**. The order in the doc is the execution order.
 5. **If the spec is under-specified**, do NOT guess. Add Open Questions back to the spec and stop.
+6. **Confirm prerender API before implementation**. For SPEC-2026-01, verify the exact TanStack Start static prerender config for the installed versions before assigning tasks to the coder.
 
 ## Handoff
 ```

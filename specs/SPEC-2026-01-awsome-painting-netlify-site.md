@@ -13,6 +13,9 @@
 
 A public marketing / portfolio website for **AWSome Painting & Decorating Limited** (reference: https://www.awsome.co.nz/), a Wellington-region painting and decorating business operating since 1993. The site presents the company's services and project portfolio and lets prospective customers request a free quote via a contact form ("email me" function). It is a brochure site: no authentication, no database, no external API integration. It is built with React 19 + TanStack Start, rendered as a **fully static prerendered** site and deployed to **Netlify** via Git continuous deployment. The contact form uses **Netlify Forms**, so there is no server-side code or secrets to manage.
 
+1. Only Migrate/Copy `HOME`, `ABOUT ME` `CONTACT US` pages. 
+2. Use new modern Css & Styles for a better user experience and designs. Feel free to Use any Tailwind Styles template available (ask me for my choice)
+
 The working code already exists in [web-app/](../web-app/), bootstrapped from the TanStack `start-tailwind-v4` example. This spec defines what that scaffold must become.
 
 ---
@@ -37,7 +40,7 @@ These were open questions in the prior draft, now answered by the product owner:
 | Auth (OQ-03) | **None.** |
 | API integration (OQ-04) | **None.** |
 | Tooling | **Lean** — Prettier + TypeScript strict only. No Vitest/unit-test gate and no husky pre-commit hooks in v1. |
-| Page scope | **Full mirror** of awsome.co.nz (Home, About, Services, Projects/Gallery, Contact) with a **modernized design** (better layout, CSS, typography). |
+| Page scope | **Mirror** of awsome.co.nz, only Home, About, And Contact pages with a **modernized design** (better layout, CSS, typography). |
 | Netlify config (OQ-05) | Product owner manages production Netlify settings (env vars, form notifications, domain) directly. |
 | Node version (OQ-07) | Node **v24.3.0** (developer's local version). |
 | Package manager | **npm** — single standardized tool (replaces the mixed npm/pnpm references in the scaffold; most universal, zero Netlify setup friction). |
