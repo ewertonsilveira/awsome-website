@@ -1,5 +1,73 @@
 @import 'tailwindcss' source('../');
 
+/*
+  Brand tokens — AWSome Painting & Decorating
+  ─────────────────────────────────────────────
+  brand   : Blue-slate scale (professional, trustworthy trade feel).
+            AA-safe shades for text (approximate; all exceed AA 4.5:1 normal / 3:1 large):
+              Light theme: brand-700 and brand-600 on white
+              Dark theme:  brand-200 and brand-300 on gray-950
+  accent  : Warm amber (craft warmth, CTA highlights).
+            AA-safe shades for text (approximate; all exceed AA threshold):
+              Light theme: accent-700 on white
+              Dark theme:  accent-300 on gray-950
+  Neutral steps (gray-50 through gray-950) are inherited from Tailwind core.
+*/
+@theme {
+  /* ── Brand (blue-slate) ── */
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e40af;
+  --color-brand-900: #1e3a8a;
+  --color-brand-950: #172554;
+
+  /* ── Accent (amber) ── */
+  --color-accent-50: #fffbeb;
+  --color-accent-100: #fef3c7;
+  --color-accent-200: #fde68a;
+  --color-accent-300: #fcd34d;
+  --color-accent-400: #fbbf24;
+  --color-accent-500: #f59e0b;
+  --color-accent-600: #d97706;
+  --color-accent-700: #b45309;
+  --color-accent-800: #92400e;
+  --color-accent-900: #78350f;
+  --color-accent-950: #451a03;
+
+  /* ── Typography ── */
+  /* System sans-serif stack — no external font request in v1 (NFR-05 CSP). */
+  /* Extend here when a web font is added (FU-03). */
+  --font-sans:
+    ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+
+  /* Type scale — overrides Tailwind defaults only where a larger baseline is wanted. */
+  /* Base (text-base): 16 px — unchanged (browser default). */
+  /* Headings use text-2xl / text-3xl / text-4xl / text-5xl from the core scale. */
+  /* No additional custom sizes needed; keep the full Tailwind scale available. */
+
+  /* Leading (line-height) — tighter headings, looser body */
+  --leading-tight: 1.2;
+  --leading-snug: 1.375;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.75;
+
+  /* Tracking (letter-spacing) — slight open-tracking on display headings */
+  --tracking-tight: -0.02em;
+  --tracking-wide: 0.04em;
+  --tracking-widest: 0.12em;
+}
+
 @layer base {
   html {
     color-scheme: light dark;
@@ -12,9 +80,36 @@
   html,
   body {
     @apply text-gray-900 bg-gray-50 dark:bg-gray-950 dark:text-gray-200;
+    font-family: var(--font-sans);
+    line-height: var(--leading-normal);
   }
 
+  /* Visible focus indicators — meets AC-11 in both themes. */
+  :focus-visible {
+    outline: 3px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :focus-visible {
+      outline-color: var(--color-brand-300);
+    }
+  }
+
+  /* Scaffold hook — no JS consumer yet; outline suppression is currently inert. */
   .using-mouse * {
     outline: none !important;
+  }
+
+  /* Heading defaults — pairs with the typographic scale above */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    font-weight: 700;
   }
 }
