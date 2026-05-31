@@ -1,9 +1,10 @@
 # Spec: AWSome Painting & Decorating — Marketing Site (React + TanStack Start on Netlify)
 
 **ID**: SPEC-2026-01
-**Status**: Draft
+**Status**: Approved
 **Owner**: Requirements Analyst
 **Created**: 2026-05-31
+**Approved**: 2026-05-31 (scope fixed to 3 pages; design direction = free open-source Tailwind kit, copy-paste/no runtime dep)
 **Branch**: `create-ts-vue-app` *(stack is now React/TanStack — see TODO: rename branch)*
 **Supersedes**: the original Vue-based draft of SPEC-2026-01 (stack pivoted per resolved OQ-02)
 
@@ -13,8 +14,8 @@
 
 A public marketing / portfolio website for **AWSome Painting & Decorating Limited** (reference: https://www.awsome.co.nz/), a Wellington-region painting and decorating business operating since 1993. The site presents the company's services and project portfolio and lets prospective customers request a free quote via a contact form ("email me" function). It is a brochure site: no authentication, no database, no external API integration. It is built with React 19 + TanStack Start, rendered as a **fully static prerendered** site and deployed to **Netlify** via Git continuous deployment. The contact form uses **Netlify Forms**, so there is no server-side code or secrets to manage.
 
-1. Only Migrate/Copy `HOME`, `ABOUT ME` `CONTACT US` pages. 
-2. Use new modern Css & Styles for a better user experience and designs. Feel free to Use any Tailwind Styles template available (ask me for my choice)
+1. Only Migrate/Copy `HOME`, `ABOUT ME`, and `CONTACT US` pages (plus a 404). **Services and Projects/Gallery are out of scope for v1.**
+2. Use new modern CSS & styles for a better user experience and design. **Design direction (resolved): base the look on a free open-source Tailwind marketing kit (e.g. HyperUI-style components), adapted as copy-paste markup so no runtime dependency is added** (honors the "no new dependencies" rule).
 
 The working code already exists in [web-app/](../web-app/), bootstrapped from the TanStack `start-tailwind-v4` example. This spec defines what that scaffold must become.
 
@@ -40,7 +41,8 @@ These were open questions in the prior draft, now answered by the product owner:
 | Auth (OQ-03) | **None.** |
 | API integration (OQ-04) | **None.** |
 | Tooling | **Lean** — Prettier + TypeScript strict only. No Vitest/unit-test gate and no husky pre-commit hooks in v1. |
-| Page scope | **Mirror** of awsome.co.nz, only Home, About, And Contact pages with a **modernized design** (better layout, CSS, typography). |
+| Page scope | **Mirror** of awsome.co.nz, **only Home, About, and Contact pages (+ a 404)** with a **modernized design** (better layout, CSS, typography). Services and Projects/Gallery are explicitly out of scope for v1. |
+| Design direction | **Free open-source Tailwind marketing kit** (HyperUI-style), adapted as **copy-paste markup — no runtime UI dependency added.** |
 | Netlify config (OQ-05) | Product owner manages production Netlify settings (env vars, form notifications, domain) directly. |
 | Node version (OQ-07) | Node **v24.3.0** (developer's local version). |
 | Package manager | **npm** — single standardized tool (replaces the mixed npm/pnpm references in the scaffold; most universal, zero Netlify setup friction). |
@@ -51,7 +53,7 @@ These were open questions in the prior draft, now answered by the product owner:
 ## Goals
 
 - A runnable React + TanStack Start site that `npm run build`s to a fully static `dist/client` and passes `tsc --noEmit`.
-- All five pages from the reference site present, with modernized, responsive, accessible design.
+- All three in-scope pages (Home, About, Contact) plus a 404, with modernized, responsive, accessible design.
 - A working "Get a Free Quote" contact form via Netlify Forms that the owner receives by email.
 - A `netlify.toml` with corrected, relative build settings + security headers that produces a successful Netlify deploy on push.
 - `CLAUDE.md` placeholder sections replaced with the real React/TanStack/Tailwind stack details.
@@ -68,7 +70,7 @@ These were open questions in the prior draft, now answered by the product owner:
 - No payment, booking, or scheduling features.
 - No internationalization.
 - No analytics/marketing pixels in v1 (can be added later; would affect CSP).
-- Sourcing real project photography is out of scope; the Gallery ships with placeholders the owner can swap.
+- **No dedicated Services page and no Projects/Gallery page in v1** (deferred to a follow-on spec). Sourcing real project photography is therefore also out of scope for v1.
 
 ---
 
@@ -90,13 +92,13 @@ File-based routes under `src/routes/` MUST exist for:
 
 | Page | Path | Content |
 |---|---|---|
-| Home | `/` | Hero with value proposition + "Get a Free Quote" CTA; highlighted services (Tiling, Interior/Exterior, Decorating) with links into Services; "Since 1993" company vision section. |
+| Home | `/` | Hero with value proposition + "Get a Free Quote" CTA; highlighted services (Tiling, Interior/Exterior, Decorating) shown inline (no separate Services page in v1); "Since 1993" company vision section. |
 | About Us | `/about` | Company story and background (operating since 1993), why-choose-us points. |
-| Services | `/services` | All services: Painting, Decorating, Tiling, Plastering, Wallpapering, Spray, Waterblasting. Each with a short description; deep-linkable by anchor where practical. |
-| Projects / Gallery | `/projects` | Responsive image grid of portfolio work using placeholder images with descriptive `alt` text the owner can replace. |
 | Contact Us | `/contact` | Contact details (FR-01) plus the quote-request form (FR-03). |
 
 A catch-all **404** route MUST render a friendly "Page not found" page with a link back home. Every route MUST be included in the static prerender (FR-05).
+
+> **Out of scope for v1:** dedicated `/services` and `/projects` (Gallery) routes. The home page surfaces a short services highlight inline; a full services page and project gallery are deferred to a follow-on spec.
 
 ### FR-03 — Quote-request contact form (Netlify Forms)
 
@@ -202,7 +204,7 @@ Hosting/CD:      Netlify (Git continuous deployment)
 
 ```
 src/
-├── routes/         # File-based routes: __root.tsx, index.tsx, about.tsx, services.tsx, projects.tsx, contact.tsx, $catchall/404
+├── routes/         # File-based routes: __root.tsx, index.tsx, about.tsx, contact.tsx, $catchall/404 (no services.tsx/projects.tsx in v1)
 ├── components/     # Presentational, reusable UI (Hero, ServiceCard, Button, SectionHeading, Header, Footer, ContactForm)
 ├── data/           # Hard-coded content (services list, project entries, business info constants)
 ├── styles/         # app.css (Tailwind v4 entry + theme)
@@ -248,10 +250,10 @@ Given a clean `npm install` in `web-app/`, when `npm run build` runs, then it MU
 Given `npm install`, when `npm run dev` runs and `http://localhost:3000/` is opened, then the Home page MUST render inside the shell (header + footer visible) with no console errors.
 
 ### AC-03 — All pages reachable via client routing
-Given the running site, when the user clicks the header nav links, then each of `/`, `/about`, `/services`, `/projects`, `/contact` MUST render its page in the outlet without a full reload, and the active link MUST be indicated.
+Given the running site, when the user clicks the header nav links, then each of `/`, `/about`, `/contact` MUST render its page in the outlet without a full reload, and the active link MUST be indicated.
 
 ### AC-04 — Direct-URL access works (prerendered)
-Given the deployed Netlify site, when a user opens `https://<site>/services` (or any route) directly, then Netlify MUST return that route's prerendered HTML with status 200 and the correct page MUST render.
+Given the deployed Netlify site, when a user opens `https://<site>/about` (or any in-scope route) directly, then Netlify MUST return that route's prerendered HTML with status 200 and the correct page MUST render.
 
 ### AC-05 — 404 page
 Given the running site, when the user visits an undefined path (e.g., `/nope`), then a friendly "Page not found" page MUST render with a working link back to Home.
@@ -291,7 +293,7 @@ The production `dist/client` output MUST NOT include the TanStack Router devtool
 ## Definition of Done
 
 - [ ] AC-01 … AC-15 verified (build/type/format gates automated; deploy + form + a11y verified manually on a Netlify preview).
-- [ ] All five pages + 404 implemented with modernized, responsive, accessible design.
+- [ ] All three pages (Home, About, Contact) + 404 implemented with modernized, responsive, accessible design.
 - [ ] Netlify deploy preview is green and a test form submission is received by the owner.
 - [ ] `netlify.toml` corrected; `CLAUDE.md` updated; no secrets committed.
 - [ ] Reviewer agent has approved the diff.

@@ -11,6 +11,15 @@ This is the operational manual. It assumes you've dropped `CLAUDE.md`, `.claude/
 ## The Pipeline at a Glance
 
 ```
+[ Tech Stack of Choice ]
+         │
+         ▼
+┌──────────────────────────────┐
+│ 1. Select TechStack - manual │  ◄── HUMAN: Select stack and update 
+│                              │      files with actions
+└────────────┬─────────────────┘
+
+
 [ Vague ticket / idea ]
          │
          ▼
