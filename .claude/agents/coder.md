@@ -23,21 +23,24 @@ You implement one task at a time from an approved design. You write tests first 
 4. **Implement the smallest diff** that satisfies the task. No drive-by changes.
 5. **Run the gates locally:**
    ```bash
-   pnpm typecheck
-   pnpm lint
-   pnpm test --reporter=ai <path>
+   # Run your stack's gate commands — defined in CLAUDE.md → Testing Rules
+   # e.g., pnpm typecheck && pnpm lint && pnpm test --reporter=ai <path>
+   # e.g., ruff check . && mypy . && pytest -x <path>
+   # e.g., go vet ./... && golangci-lint run && go test ./...
    ```
 6. **If a gate fails, fix it.** Three-strikes rule: max 3 attempts at the same root cause. Then stop and report.
 7. **Report back** with: files changed, tests added, gate output, any deviations from the design.
 
 ## Code Standards
 
-- TypeScript strict, no `any`, no `as unknown as`.
-- Validate all external input with Zod at the boundary.
-- Composables return `{ state: readonly, actions }`, never bare refs.
-- Components: `<script setup lang="ts">` only. Props typed via `defineProps<Props>()`. Emits via `defineEmits<Emits>()`.
-- No console.log in committed code. Use the project logger.
-- Imports use `@/` aliases.
+Apply the standards defined in `CLAUDE.md` → **Stack** and **Conventions** sections for this repo's language and framework. In addition:
+
+- Validate all external input at system boundaries (API responses, form data, CLI args, env vars).
+- No debug/print/console statements in committed code. Use the project logger.
+- No new dependencies without proposing them first and pausing for approval.
+- Use the import alias / module resolution convention defined in `CLAUDE.md`.
+
+> **Stack-specific rules**: If this branch's `CLAUDE.md` defines stricter rules (e.g., no `any` in TypeScript, no bare `except` in Python), those take precedence.
 
 ## What you DO NOT do
 

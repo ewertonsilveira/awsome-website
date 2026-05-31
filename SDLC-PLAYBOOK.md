@@ -1,4 +1,4 @@
-# SDLC Playbook: From Ticket to Merged PR with Multi-Agent Workflow
+# SDLC Playbook: From Ticket to Merged PR with Multi-Agent Development Workflow
 
 **Role**: Software Engineer
 **Stack**: TypeScript / Vue 3 / Vite / Node.js

@@ -1,6 +1,6 @@
-# AI Agentic Architectural research and workflow framework.
+# AI Agentic Architectural research and workflow framework for Agentic Development.
 
-# Software Engineering Workflow: The Agentic SDLC
+# Software Engineering Workflow: The AI Agentic Development - SDLC
 
 This document details the modern workflow for integrating specialized AI LLMs and autonomous AI Agents across the Software Development Lifecycle (SDLC) to optimize velocity, code safety, and architectural decision-making.
 
