@@ -289,9 +289,16 @@ The following scripts MUST exist in `package.json`:
 - [ ] **OQ-07 — Node.js version pinning**: What Node.js version should be pinned in `.nvmrc` / `.node-version` and in the Netlify `NODE_VERSION` environment variable? Recommend Node.js 20 LTS.
 
 ### ANSWERS:
-OQ-01 - Web app is basic static web page with ability to customer to send email. (https://www.awsome.co.nz/) Business: `AWSome Painting & Decorating Limited`. 
-OQ-02 - We can use swap to stack, `React`, `Tanstack`,  no need to get hanged on one single framework. What we need is to deploy to netlify.
-
+OQ-01 - Web app is basic static web page with ability to customer to send email. (https://www.awsome.co.nz/). Business: `AWSome Painting & Decorating Limited`. It is a basic Web page with porfolio information about the business and email me function
+OQ-02 - We can use swap to stack, `React`, `Tanstack`, Nuxt/Next, Astro. No need to get hanged on one single framework. What we need is to deploy to netlify. I've created an app on netlify website and pull it's changes. Have a look at it
+- I moved ahead and installed their exxample: `npx gitpick TanStack/router/tree/main/examples/react/start-tailwind-v4 start-tailwind-v4`
+- We need to somehow initialize Netlify locally and push to server (netlify.toml file)
+ - https://docs.netlify.com/api-and-cli-guides/cli-guides/get-started-with-cli/#continuous-deployment
+OQ-03 — No Authentication, Authorization needed
+OQ-04 — No Api Integration
+OQ-05 - I will update Netlify Production configuration myself when we are ready
+OQ-06 - You can base on the current CSS styles. Later we will improve it
+OQ-07 - I'm running Node.js v24.3.0
 ---
 
 ## Acceptance Criteria
