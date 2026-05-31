@@ -219,6 +219,65 @@ Each phase has a **creator agent** that does the work and a **validator agent** 
 
 ---
 
+## Model Configuration
+
+Model selection is controlled by a single config file — no need to edit individual agent files.
+
+### The Config File
+
+`.claude/agent-models.json` has three named presets and an optional per-agent override block:
+
+| Preset | Who uses it | Cost estimate |
+|---|---|---|
+| `budget` | Haiku for high-volume agents, Sonnet for reasoning agents | ~$10–30/mo |
+| `balanced` | **Default.** Sonnet for coder/tester/requirements, Opus for architect/reviewer/security | ~$80–200/mo |
+| `quality` | Opus everywhere. Maximum depth. | ~$400–800/mo |
+
+To switch presets, edit `activePreset` in the config:
+
+```json
+{
+  "activePreset": "balanced"
+}
+```
+
+To temporarily upgrade one agent without changing the preset, use `overrides.agents`:
+
+```json
+{
+  "activePreset": "balanced",
+  "overrides": {
+    "agents": { "coder": "claude-opus-4-6" }
+  }
+}
+```
+
+Then run the apply script to propagate the config into the agent files.
+
+### Applying the Config
+
+```bash
+# Apply the active preset (reads activePreset from the config)
+node .claude/scripts/apply-models.mjs
+
+# One-off: use a different preset for this session only (doesn't change the config file)
+node .claude/scripts/apply-models.mjs --preset=quality
+
+# Preview what would change without writing anything
+node .claude/scripts/apply-models.mjs --dry-run
+```
+
+After running, restart your Claude Code session. Claude Code reads the `model:` frontmatter from each agent file at invocation time — the script is the only thing that writes to those files.
+
+### How Enforcement Works
+
+1. `agent-models.json` is the source of truth for model assignments.
+2. `apply-models.mjs` reads the config and writes `model: <value>` into the YAML frontmatter of each `.claude/agents/*.md` file.
+3. Claude Code reads that frontmatter when it invokes the subagent and routes the request to the correct model.
+4. Hooks and settings.json do not touch model selection — that separation is intentional.
+
+---
+
 ## Multi-Agent Architecture
 
 ```

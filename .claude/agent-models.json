@@ -1,0 +1,55 @@
+{
+  "_readme": "Edit 'activePreset' to switch all agents at once. Run 'node .claude/scripts/apply-models.mjs' to apply. For a one-off run, pass --preset=<name> to the script instead.",
+
+  "activePreset": "budget",
+
+  "presets": {
+    "budget": {
+      "description": "Lower-cost models across the board. Best for exploration, prototyping, and simple tasks where speed matters more than depth.",
+      "costEstimate": "~$10–30/month per engineer",
+      "agents": {
+        "requirements-analyst": "claude-haiku-4-5-20251001",
+        "architect":            "claude-sonnet-4-6",
+        "coder":                "claude-haiku-4-5-20251001",
+        "tester":               "claude-haiku-4-5-20251001",
+        "reviewer":             "claude-sonnet-4-6",
+        "security-auditor":     "claude-sonnet-4-6",
+        "sre-incident":         "claude-sonnet-4-6"
+      }
+    },
+
+    "balanced": {
+      "description": "Default. High-volume agents (coder, tester, requirements) use Sonnet. High-stakes reasoning (architect, reviewer, security) uses Opus. Best for day-to-day development.",
+      "costEstimate": "~$80–200/month per engineer",
+      "agents": {
+        "requirements-analyst": "claude-sonnet-4-6",
+        "architect":            "claude-opus-4-6",
+        "coder":                "claude-sonnet-4-6",
+        "tester":               "claude-sonnet-4-6",
+        "reviewer":             "claude-opus-4-6",
+        "security-auditor":     "claude-opus-4-6",
+        "sre-incident":         "claude-opus-4-6"
+      }
+    },
+
+    "quality": {
+      "description": "Opus everywhere. Maximum reasoning depth. Best for critical features, complex architecture, or security-sensitive work where cost is secondary.",
+      "costEstimate": "~$400–800/month per engineer",
+      "agents": {
+        "requirements-analyst": "claude-opus-4-6",
+        "architect":            "claude-opus-4-6",
+        "coder":                "claude-opus-4-6",
+        "tester":               "claude-opus-4-6",
+        "reviewer":             "claude-opus-4-6",
+        "security-auditor":     "claude-opus-4-6",
+        "sre-incident":         "claude-opus-4-6"
+      }
+    }
+  },
+
+  "overrides": {
+    "_comment": "Optional per-agent overrides applied on top of the active preset. Useful for temporarily upgrading one agent without changing the preset. Set a value to null to remove an override.",
+    "_example_usage": "To run the coder at Opus quality temporarily: set { \"coder\": \"claude-opus-4-6\" } here, run apply-models.mjs, then remove after.",
+    "agents": {}
+  }
+}
