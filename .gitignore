@@ -1,0 +1,6 @@
+.claude/state/
+node_modules/
+dist/
+*.log
+.env*
+!.env.example

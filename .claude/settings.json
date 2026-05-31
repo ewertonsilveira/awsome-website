@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/block-protected-paths.mjs",
+            "description": "Blocks writes to migrations/, infra/, .env*, .github/workflows/ without explicit approval"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/block-dangerous-bash.mjs",
+            "description": "Blocks rm -rf /, force-pushes to main, secret echoes"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/run-typecheck-on-ts.mjs",
+            "description": "Runs tsc --noEmit on touched TS/Vue files; fails the tool call on type errors"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/final-gate.mjs",
+            "description": "Final gate: lint + typecheck + test. Surfaces failures before declaring done."
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "coder|tester",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/three-strikes-check.mjs",
+            "description": "If the subagent looped >3 times on the same error, halts the orchestrator and surfaces the failure"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(pnpm test:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm build:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git status:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Read(./.env*)",
+      "Write(./.env*)"
+    ]
+  }
+}

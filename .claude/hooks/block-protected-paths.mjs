@@ -1,0 +1,48 @@
+#!/usr/bin/env node
+// PreToolUse hook: blocks Write/Edit to protected paths unless env var ALLOW_PROTECTED=1.
+// Reads tool input from stdin (Claude Code hook contract).
+
+import { readFileSync } from 'node:fs';
+
+const PROTECTED_PATTERNS = [
+  /^migrations\//,
+  /^infra\//,
+  /^terraform\//,
+  /\.env(\..+)?$/,
+  /^\.github\/workflows\//,
+  /^pnpm-lock\.yaml$/,
+  /^package-lock\.json$/,
+];
+
+let raw = '';
+try {
+  raw = readFileSync(0, 'utf8');
+} catch {
+  process.exit(0); // no stdin? let it pass
+}
+
+let payload;
+try {
+  payload = JSON.parse(raw);
+} catch {
+  process.exit(0);
+}
+
+const filePath = payload?.tool_input?.file_path || payload?.tool_input?.path || '';
+const relPath = filePath.replace(process.cwd() + '/', '').replace(/\\/g, '/');
+
+if (process.env.ALLOW_PROTECTED === '1') {
+  process.exit(0);
+}
+
+for (const pat of PROTECTED_PATTERNS) {
+  if (pat.test(relPath)) {
+    console.error(JSON.stringify({
+      decision: 'block',
+      reason: `Path "${relPath}" is protected. Get explicit human approval, then re-run with ALLOW_PROTECTED=1.`,
+    }));
+    process.exit(2); // exit code 2 = block in Claude Code hook contract
+  }
+}
+
+process.exit(0);
