@@ -242,7 +242,7 @@ Each task is one coder loop (<~200 LOC), ordered so `cd web-app && npm run build
 
 | Task | Title | Files | Depends on | ACs | Effort |
 |---|---|---|---|---|---|
-| **T1** | Tooling + version pin: add Prettier + `.prettierrc` + `format:check` script; pin `typescript` to `5.x`; remove dead `start` script | `web-app/package.json`, `web-app/.prettierrc` (NEW) | — | AC-08, AC-09 | S |
+| **T1** ✅ | Tooling + version pin: add Prettier + `.prettierrc` + `format:check` script; pin `typescript` to `5.x`; remove dead `start` script | `web-app/package.json`, `web-app/.prettierrc` (NEW) | — | AC-08, AC-09 | S |
 | **T2** | Prerender + static config: add `prerender`/`pages` to `tanstackStart()` in `vite.config.ts`; verify `dist/client` static HTML for all routes; **explicitly confirm `dist/client/404.html` is emitted** (if not, add `{ path: '/404' }` to `pages`) (ADR-06); confirm no server entry consumed | `web-app/vite.config.ts` | T1 | AC-01, AC-04, AC-05(direct-hit) | M |
 | **T3** | `netlify.toml` rewrite: relative `publish="dist/client"`, `command="npm run build"`, drop `*Origin`/emails plugin/functions, `[dev]` port, NFR-05 headers + CSP (ADR-03) with documented extension points. **Verify the site hydrates under the CSP and that prod HTML has no inline `<style>`/`style=` (style-src 'self').** **Only if T2 could not emit `404.html`**, add a `status=404` `[[redirects]]` fallback (NOT 200) | `web-app/netlify.toml` | T2 | AC-12, AC-13 | M |
 | **T4** | Theme tokens: extend `app.css` with `@theme` brand palette + typographic scale (light/dark, AA contrast) | `web-app/src/styles/app.css` | T1 | AC-11(partial) | S |
