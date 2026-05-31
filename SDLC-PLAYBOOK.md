@@ -6,18 +6,21 @@
 
 This is the operational manual. It assumes you've dropped `CLAUDE.md`, `.claude/`, and `.github/copilot-instructions.md` into your repo.
 
+
+# IMPORTANT - Update `Tech Stack of Choice` files before Start `implement` phase
+         │
+         ▼
+┌──────────────────────────────┐
+│ 1. Select TechStack - manual │  ◄── HUMAN: Select stack and update 
+│                              │      files with a
+└────────────┬─────────────────┘
+
+
 ---
 
 ## The Pipeline at a Glance
 
 ```
-[ Tech Stack of Choice ]
-         │
-         ▼
-┌──────────────────────────────┐
-│ 1. Select TechStack - manual │  ◄── HUMAN: Select stack and update 
-│                              │      files with actions
-└────────────┬─────────────────┘
 
 
 [ Vague ticket / idea ]
@@ -33,10 +36,11 @@ This is the operational manual. It assumes you've dropped `CLAUDE.md`, `.claude/
 │   Output: <SPEC>-design.md   │      HUMAN GATE: approve design
 └────────────┬─────────────────┘
              ▼
-┌─────────────────────────────┐
-│ 3. IMPLEMENT (/implement T1) │  ◄── coder (Sonnet) → tester (Sonnet)
-│   Loop per task, max 3 strikes│     HOOK GATE: typecheck/lint/test
-└────────────┬─────────────────┘
+┌──────────────────────────────┐
+│ 3. IMPLEMENT (/implement T1)  │  ◄── coder → gates+run-app → reviewer → commit
+│   Loop per task, max 3 strikes│     GATE: build/typecheck/format + run app
+│                               │     REVIEWER (Opus) signs off, then git commit
+└────────────┬──────────────────┘
              ▼
 ┌─────────────────────────────┐
 │ 4. REVIEW   (/review)        │  ◄── reviewer (Opus) + security-auditor (Opus)
@@ -132,14 +136,14 @@ For each task in the design:
 1. ```
    /implement SPEC-2026-XX T1
    ```
-2. The `coder` (Sonnet) reads the task description and "Touched Files", writes the smallest diff that satisfies it.
+2. The `coder` reads the task description and "Touched Files", writes the smallest diff that satisfies it.
 3. **Hooks run automatically** after each file write:
    - `PostToolUse`: `tsc --noEmit` on touched files — failure rolls back the write
-4. The coder runs `pnpm test --reporter=ai` itself, reads the output, iterates.
-5. **Three-strikes**: if the coder fails the same root cause 3 times, the `SubagentStop` hook halts the loop and surfaces an escalation report. You decide what to do.
-6. On success, the orchestrator hands to the `tester` (Sonnet), which adds boundary/error/security cases.
-7. **Final gate** (Stop hook): full `pnpm typecheck && pnpm lint && pnpm test --coverage`. Must pass.
-8. Commit with a conventional message referencing the SPEC.
+4. **Quality gates** run from `web-app/`: `npm run build` (vite build + `tsc --noEmit` typecheck) and `npm run format:check` (Prettier) must both exit 0.
+5. **Run the app** to confirm the change actually works — start the dev server / preview the built output and smoke-check the touched routes or behaviour (`/run` or `/verify`). Add and run unit tests **only if the task or design calls for them** (v1 has no automated suite — see CLAUDE.md → Testing Rules).
+6. **Three-strikes**: if the coder fails the same root cause 3 times, the `SubagentStop` hook halts the loop and surfaces an escalation report. You decide what to do.
+7. **Reviewer gate** (same idea as the plan-reviewer gate in Phase 2): the `reviewer` (Opus) runs an adversarial critic pass on **this task's diff** — correctness, contract/spec/AC adherence, convention violations, out-of-scope edits. Critical/Important findings are folded back in by the `coder` (the reviewer never fixes its own findings), then the gates re-run. Re-review once if a Critical finding materially changed the diff.
+8. **Commit** once gates pass and the reviewer approves: a single Conventional Commit referencing the SPEC, including the code diff and the design-doc `✅` update. This leaves a **clean working tree for the next task**.
 
 ### Parallel work tip
 T1, T2, T3 are sequential by default but if the design marks tasks as independent, you can open multiple Claude Code sessions or use **Agent Teams** (experimental) to run them in parallel. Be careful: parallel work on touching files = merge pain.

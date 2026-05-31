@@ -115,10 +115,10 @@ These rules apply to ALL agents in this repo, regardless of stack:
 1. **Spec first**: For any task larger than ~50 LOC or touching >2 files, write/update a spec under `specs/` before coding (see `.claude/commands/spec.md`).
 2. **Three-strikes rule**: If a test or build fails 3 times on the same root cause, stop. Summarize what you tried, your current hypothesis, and escalate to the human.
 3. **Plan before edit**: Use the `architect` subagent for cross-file changes. Confirm the plan with the human before touching code.
-4. **Peer review every task**: After each implementation task, the `reviewer` agent validates the diff before moving to the next task. Do not skip this step.
-5. **Verify before claiming done**: Run your stack's typecheck + lint + test suite after every meaningful change. If any fail, do not declare success.
+4. **Peer review every task**: After each implementation task — and after its gates pass but **before it is committed** — the `reviewer` agent runs an adversarial pass on the task diff (the same creator/validator pattern the `plan-reviewer` applies to designs). Fold Critical/Important findings back via the `coder`; the reviewer never fixes its own findings. Do not skip this step.
+5. **Verify before claiming done**: After every meaningful change run the gates from `web-app/` — `npm run build` (vite build + `tsc --noEmit`) and `npm run format:check` — **and run the app** (dev server / preview) to confirm it actually works, not just that it compiles. Add/run tests only where the task or design calls for them (v1 has no automated suite — see Testing Rules). If any gate fails, do not declare success.
 6. **Diff hygiene**: Make the smallest diff that satisfies the spec. No unrelated reformatting. No "while I'm here" cleanups.
-7. **Commit messages**: Conventional Commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`). Reference the spec ID or ticket in the body.
+7. **One clean commit per task**: A `/implement` task is done only when the gates pass, the app has been run, and the reviewer has approved — then commit it as a single Conventional Commit (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`) referencing the spec ID in the body. Each task leaves a clean working tree so the next `/implement` starts fresh.
 8. **No new dependencies** without justifying it in the PR description (size, maintenance status, alternatives considered).
 
 ---
@@ -158,7 +158,7 @@ See `.claude/commands/`:
 |---|---|
 | `/spec` | Generates a structured specification from a vague input |
 | `/plan` | Breaks an approved spec into ordered implementation tasks |
-| `/implement` | Executes a single task with the coder → tester → reviewer loop |
+| `/implement` | Executes a single task: coder → gates + run-app → reviewer → commit |
 | `/test` | Generates or extends tests for a specific file or module |
 | `/review` | Runs an adversarial review of the current diff |
 | `/pr-prep` | Produces the PR description + risk summary |

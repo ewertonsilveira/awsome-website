@@ -40,7 +40,7 @@ Hosting:     Netlify
 5. **Static form detection.** The Netlify Forms `<form>` MUST be present in prerendered HTML — never render it client-side only.
 6. **No new top-level dependencies** without explicit justification in the PR.
 7. **Conventional Commits.** `type(scope): summary` — reference `SPEC-2026-01` in the body.
-8. **Peer review at every task.** The `reviewer` agent signs off before moving to the next task.
+8. **Gate, review, then commit — every task.** After the gates pass (`npm run build` + `npm run format:check`) **and the app has been run/smoke-checked**, the `reviewer` agent signs off on the task diff before it is committed. Each task lands as a single Conventional Commit, leaving a clean working tree for the next task.
 9. **routeTree.gen.ts is auto-generated.** Never hand-edit it. TanStack Router regenerates it on build/dev.
 
 ---

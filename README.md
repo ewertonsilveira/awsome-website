@@ -78,9 +78,9 @@ Each phase has a **creator agent** that does the work and a **validator agent** 
        │  │  Creator: coder          │ │
        │  │    writes code           │ │
        │  │    ↓                     │ │
-       │  │  Hook Gate (automated)   │ │
-       │  │    typecheck + lint +    │ │
-       │  │    test must pass        │ │
+       │  │  Gate (build+format) +   │ │
+       │  │    run-app smoke check   │ │
+       │  │    must pass             │ │
        │  │    ↓ fail → coder retries│ │
        │  │    (3-strikes → ESCALATE)│ │
        │  │    ↓ pass                │ │
@@ -94,13 +94,13 @@ Each phase has a **creator agent** that does the work and a **validator agent** 
        │  │    adversarial diff      │ │
        │  │    review of Ti only     │ │
        │  │    ┌──────────────────┐  │ │
-       │  │    │ APPROVE → T(i+1)│  │ │
+       │  │    │ APPROVE → commit │  │ │
+       │  │    │   → T(i+1)       │  │ │
        │  │    │ REQUEST_CHANGES  │  │ │
        │  │    │  → coder fixes   │  │ │
-       │  │    │  → tester checks │  │ │
        │  │    │  → reviewer re-  │  │ │
        │  │    │    reviews       │  │ │
-       │  │    │ BLOCK → HUMAN   │  │ │
+       │  │    │ BLOCK → HUMAN    │  │ │
        │  │    │  GATE ✓         │  │ │
        │  │    └──────────────────┘  │ │
        │  └──────────────────────────┘ │
@@ -166,6 +166,8 @@ Each phase has a **creator agent** that does the work and a **validator agent** 
 | 5. PR Prep | orchestrator | reviewer | 1 sanity pass |
 | 6. GitHub Review | Copilot | **Human** | merge decision |
 | 7. Post-merge | sre-incident | **Human** | incident-driven |
+
+> **Per-task close-out (Phase 3).** Every `/implement` task ends the same way: the gates run (`npm run build` + `npm run format:check`) **and the app is run/smoke-checked** so the change is proven to work — not just to compile; then the `reviewer` signs off on the task diff (the same creator/validator pattern used for the design in Phase 2); then the task is committed as a single Conventional Commit. The commit leaves a **clean working tree for the next task**, so each task is independently reviewable and revertable.
 
 ---
 
