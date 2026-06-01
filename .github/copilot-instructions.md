@@ -27,7 +27,7 @@ Lint/format: Prettier + tsc --noEmit (no ESLint / Vitest in v1)
 Pkg mgr:     npm (never pnpm / yarn)
 Node:        v24.3.0
 Hosting:     Netlify
-Live URL:    https://willowy-genie-b0cfb7.netlify.app (auto-generated; custom domain pending)
+Live URL:    https://awsome-nz.netlify.app (custom domain pending)
 ```
 
 ---

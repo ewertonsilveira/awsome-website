@@ -23,7 +23,7 @@ Lint/format:     Prettier + tsc --noEmit (no ESLint / Vitest / husky in v1)
 Package manager: npm — standardised; never use pnpm or yarn in this repo
 Runtime:         Node.js v24.3.0
 Hosting/CD:      Netlify (Git continuous deployment, forms, headers)
-Live URL:        https://willowy-genie-b0cfb7.netlify.app (auto-generated name; custom domain pending FU-05)
+Live URL:        https://awsome-nz.netlify.app (custom name; custom domain pending FU-05)
 App code lives:  web-app/
 Awsome Prod URL: https://www.awsome.co.nz
 Hosted on:       https://www.godaddy.com

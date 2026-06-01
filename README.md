@@ -25,6 +25,12 @@ Modern AI coding tools are powerful in isolation but chaotic without structure. 
 The design follows 2026 industry patterns: spec-driven development as the source of truth, hub-and-spoke multi-agent architecture, per-agent model selection for cost efficiency, and deterministic hooks as the safety layer over non-deterministic LLMs.
 
 ---
+## Deployment
+
+[![Netlify Status](https://api.netlify.com/api/v1/badges/235abaf4-f4f6-4f37-b093-1ce27499d054/deploy-status)](https://app.netlify.com/projects/awsome-nz/deploys)
+---
+
+---
 
 ## The Pipeline
 
