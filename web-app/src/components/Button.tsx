@@ -1,4 +1,4 @@
-import { type ButtonHTMLAttributes } from 'react';
+import { type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { Link, type LinkProps } from '@tanstack/react-router';
 import { twMerge } from 'tailwind-merge';
 
@@ -12,10 +12,11 @@ type ButtonButton = Shared & { as?: 'button' } & Omit<
     ButtonHTMLAttributes<HTMLButtonElement>,
     'className'
   >;
-type ButtonLink = Shared & { as: 'link'; to: string } & Omit<
-    LinkProps,
-    'children' | 'className'
-  >;
+type ButtonLink = Shared & {
+  as: 'link';
+  to: string;
+  children?: ReactNode;
+} & Omit<LinkProps, 'children' | 'className' | 'to'>;
 
 export type ButtonProps = ButtonButton | ButtonLink;
 
@@ -45,8 +46,12 @@ export function Button(props: ButtonProps) {
   );
 
   if (props.as === 'link') {
-    const { as: _, variant: _v, size: _s, className: _c, ...rest } = props;
-    return <Link className={classes} {...rest} />;
+    const { as: _, variant: _v, size: _s, className: _c, to, ...rest } = props;
+    // `to` is typed as `string` in ButtonLink to accept any path (including
+    // routes not yet registered in routeTree.gen.ts). Cast to the Link-expected
+    // type here — the only cast in this file, scoped to the render boundary.
+    const linkProps = rest as Omit<LinkProps, 'children' | 'className' | 'to'>;
+    return <Link className={classes} to={to as '/'} {...linkProps} />;
   }
 
   const { as: _, variant: _v, size: _s, className: _c, ...rest } = props;
