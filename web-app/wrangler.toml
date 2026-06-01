@@ -1,0 +1,7 @@
+name = "awsome-nz"
+pages_build_output_dir = "dist/client"
+compatibility_date = "2026-06-01"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
