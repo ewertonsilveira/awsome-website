@@ -18,7 +18,7 @@ export function Hero({ title, subtitle, ctaLabel, ctaTo }: HeroProps) {
           {subtitle}
         </p>
         <div className="mt-8">
-          <Button as="link" to={ctaTo} variant="secondary" size="lg">
+          <Button as="link" to={ctaTo} variant="inverse" size="lg">
             {ctaLabel}
           </Button>
         </div>

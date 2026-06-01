@@ -3,7 +3,7 @@ import { Link, type LinkProps } from '@tanstack/react-router';
 import { twMerge } from 'tailwind-merge';
 
 type Shared = {
-  variant?: 'primary' | 'secondary' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'inverse';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 };
@@ -27,6 +27,7 @@ const VARIANT_CLASSES: Record<NonNullable<Shared['variant']>, string> = {
   primary: 'bg-brand-600 text-white hover:bg-brand-700',
   secondary: 'border border-brand-600 text-brand-700 hover:bg-brand-50',
   ghost: 'text-brand-700 hover:bg-brand-50',
+  inverse: 'bg-white text-brand-700 hover:bg-brand-50',
 };
 
 const SIZE_CLASSES: Record<NonNullable<Shared['size']>, string> = {
@@ -47,11 +48,11 @@ export function Button(props: ButtonProps) {
 
   if (props.as === 'link') {
     const { as: _, variant: _v, size: _s, className: _c, to, ...rest } = props;
-    // `to` is typed as `string` in ButtonLink to accept any path (including
-    // routes not yet registered in routeTree.gen.ts). Cast to the Link-expected
-    // type here — the only cast in this file, scoped to the render boundary.
-    const linkProps = rest as Omit<LinkProps, 'children' | 'className' | 'to'>;
-    return <Link className={classes} to={to as '/'} {...linkProps} />;
+    // Button accepts any path string because routes are registered incrementally
+    // across tasks (e.g. `/contact` is not a known route literal until T11), whereas
+    // TanStack's <Link> is typed to registered routes only. Assert the target at this
+    // single library boundary; `to` stays `string` in the public ButtonLink contract.
+    return <Link className={classes} to={to as LinkProps['to']} {...rest} />;
   }
 
   const { as: _, variant: _v, size: _s, className: _c, ...rest } = props;
