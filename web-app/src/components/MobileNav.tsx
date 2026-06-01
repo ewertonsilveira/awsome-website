@@ -13,6 +13,9 @@ const MENU_ID = 'mobile-nav-menu';
 export function MobileNav({ navItems, open, onToggle }: MobileNavProps) {
   const toggleRef = React.useRef<HTMLButtonElement>(null);
   const menuRef = React.useRef<HTMLUListElement>(null);
+  // containerRef wraps the entire toggle + dropdown region for focus and
+  // pointer containment checks.
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   // Esc closes the menu and returns focus to the toggle button (AC-10).
   React.useEffect(() => {
@@ -35,8 +38,41 @@ export function MobileNav({ navItems, open, onToggle }: MobileNavProps) {
     }
   }, [open]);
 
+  // Critical 2 — deliberate disclosure: close the menu when focus leaves the
+  // nav region (Tab past the last link → menu closes, focus continues naturally).
+  function handleFocusOut(e: React.FocusEvent<HTMLDivElement>) {
+    if (!open) return;
+    // relatedTarget is the element receiving focus; null means focus left
+    // the document entirely. Either way it's outside our region.
+    const relatedTarget = e.relatedTarget;
+    if (
+      relatedTarget instanceof Node &&
+      containerRef.current?.contains(relatedTarget)
+    ) {
+      return; // focus stayed inside — do nothing
+    }
+    onToggle();
+  }
+
+  // Important — outside pointer dismissal: close the menu on a pointerdown
+  // anywhere outside the nav region. This covers mouse and touch.
+  React.useEffect(() => {
+    if (!open) return;
+    function handlePointerDown(e: PointerEvent) {
+      if (
+        e.target instanceof Node &&
+        containerRef.current?.contains(e.target)
+      ) {
+        return; // inside the region — ignore
+      }
+      onToggle();
+    }
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [open, onToggle]);
+
   return (
-    <div className="md:hidden">
+    <div ref={containerRef} className="md:hidden" onBlur={handleFocusOut}>
       {/* Hamburger toggle */}
       <button
         ref={toggleRef}
@@ -103,9 +139,7 @@ export function MobileNav({ navItems, open, onToggle }: MobileNavProps) {
                 className: 'font-semibold text-brand-700 dark:text-brand-300',
               }}
               activeOptions={item.to === '/' ? { exact: true } : undefined}
-              onClick={() => {
-                if (open) onToggle();
-              }}
+              onClick={onToggle}
               className="block px-4 py-3 text-base text-gray-700 hover:bg-brand-50 hover:text-brand-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-brand-300"
             >
               {item.label}

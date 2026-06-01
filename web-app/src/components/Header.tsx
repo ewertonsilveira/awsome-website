@@ -15,6 +15,21 @@ export function Header({ navItems }: HeaderProps) {
     setMobileOpen((prev) => !prev);
   }, []);
 
+  // Critical 1 — breakpoint/state desync: when the viewport crosses the md
+  // breakpoint (≥768 px) the mobile toggle becomes hidden, so any stale open
+  // state must be cleared. matchMedia is browser-only — safe inside useEffect
+  // because effects don't run during static prerender.
+  React.useEffect(() => {
+    const mql = window.matchMedia('(min-width: 768px)');
+    function handleChange(e: MediaQueryListEvent) {
+      if (e.matches) setMobileOpen(false);
+    }
+    mql.addEventListener('change', handleChange);
+    // Also close immediately if the component mounts already at md+ width.
+    if (mql.matches) setMobileOpen(false);
+    return () => mql.removeEventListener('change', handleChange);
+  }, []);
+
   return (
     <header className="relative border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
