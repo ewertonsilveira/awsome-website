@@ -35,18 +35,17 @@ export function ContactForm({ services }: ContactFormProps) {
     setStatus('submitting');
 
     try {
-      const body = new URLSearchParams({ 'form-name': 'contact' });
-      for (const [k, v] of Object.entries(result.data)) {
-        if (v !== undefined) body.set(k, v);
-      }
-
-      await fetch('/', {
+      const res = await fetch('/api/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: body.toString(),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(result.data),
       });
 
-      setStatus('success');
+      if (res.ok) {
+        setStatus('success');
+      } else {
+        setStatus('error');
+      }
     } catch {
       setStatus('error');
     }
@@ -80,20 +79,10 @@ export function ContactForm({ services }: ContactFormProps) {
     <form
       name="contact"
       method="POST"
-      data-netlify="true"
-      netlify-honeypot="bot-field"
-      action="/"
       onSubmit={handleSubmit}
       noValidate
       className="space-y-6"
     >
-      <input type="hidden" name="form-name" value="contact" />
-      <p hidden>
-        <label>
-          Don&apos;t fill this out: <input name="bot-field" />
-        </label>
-      </p>
-
       {/* Name */}
       <div>
         <label
