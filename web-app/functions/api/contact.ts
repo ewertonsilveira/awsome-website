@@ -133,6 +133,8 @@ export const onRequestPost = async (
   const { name, email, phone, service, message } = parsed.data;
 
   // KV rate-limit: key = ip:<CF-Connecting-IP>
+  // Best-effort only — KV read-modify-write is not atomic; concurrent bursts may
+  // briefly exceed the limit across edge colos (accepted trade-off per ADR-02).
   const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
   const kvKey = `ip:${ip}`;
 
@@ -145,11 +147,8 @@ export const onRequestPost = async (
     });
   }
 
-  await env.RATE_LIMIT.put(kvKey, String(count + 1), {
-    expirationTtl: RATE_LIMIT_TTL,
-  });
-
-  // Send email via Resend
+  // Send email via Resend — increment the counter only on success so that
+  // Resend failures do not consume the user's rate-limit allowance.
   if (!env.RESEND_API_KEY) {
     return json({ ok: false, error: 'send_failed' }, 500);
   }
@@ -176,6 +175,10 @@ export const onRequestPost = async (
   if (sendError) {
     return json({ ok: false, error: 'send_failed' }, 500);
   }
+
+  await env.RATE_LIMIT.put(kvKey, String(count + 1), {
+    expirationTtl: RATE_LIMIT_TTL,
+  });
 
   return json({ ok: true }, 200);
 };
