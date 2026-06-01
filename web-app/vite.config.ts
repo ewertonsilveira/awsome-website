@@ -21,7 +21,7 @@ export default defineConfig({
       },
       // Explicit pages pinned here; extend as new routes are added (T9, T11, T12).
       // /about and /contact are added in T9/T11; /404 added in T12 when $.tsx exists.
-      pages: [{ path: '/' }],
+      pages: [{ path: '/' }, { path: '/about' }],
     }),
     viteReact(),
     tailwindcss(),
