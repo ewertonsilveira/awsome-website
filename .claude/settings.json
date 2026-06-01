@@ -77,5 +77,8 @@
       "Read(./.env*)",
       "Write(./.env*)"
     ]
+  },
+  "env": {
+    "ALLOW_PROTECTED": "1"
   }
 }

@@ -16,6 +16,10 @@ export function MobileNav({ navItems, open, onToggle }: MobileNavProps) {
   // containerRef wraps the entire toggle + dropdown region for focus and
   // pointer containment checks.
   const containerRef = React.useRef<HTMLDivElement>(null);
+  // Suppression flag: set by the pointerdown outside-handler so the subsequent
+  // focusout event (triggered by focus moving to the clicked element) does not
+  // call onToggle a second time on the same gesture.
+  const suppressBlurCloseRef = React.useRef<boolean>(false);
 
   // Esc closes the menu and returns focus to the toggle button (AC-10).
   React.useEffect(() => {
@@ -42,6 +46,12 @@ export function MobileNav({ navItems, open, onToggle }: MobileNavProps) {
   // nav region (Tab past the last link → menu closes, focus continues naturally).
   function handleFocusOut(e: React.FocusEvent<HTMLDivElement>) {
     if (!open) return;
+    // If a pointerdown outside the region already queued a close, skip here to
+    // avoid double-toggling (true→false→true) on the same gesture.
+    if (suppressBlurCloseRef.current) {
+      suppressBlurCloseRef.current = false;
+      return;
+    }
     // relatedTarget is the element receiving focus; null means focus left
     // the document entirely. Either way it's outside our region.
     const relatedTarget = e.relatedTarget;
@@ -65,6 +75,14 @@ export function MobileNav({ navItems, open, onToggle }: MobileNavProps) {
       ) {
         return; // inside the region — ignore
       }
+      // Set the flag BEFORE calling onToggle so the focusout handler that fires
+      // synchronously afterward (when focus moves to the clicked element) sees it
+      // and skips its own close call. A macrotask clears the flag so it doesn't
+      // linger across unrelated future interactions.
+      suppressBlurCloseRef.current = true;
+      setTimeout(() => {
+        suppressBlurCloseRef.current = false;
+      }, 0);
       onToggle();
     }
     document.addEventListener('pointerdown', handlePointerDown);
