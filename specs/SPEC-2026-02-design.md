@@ -190,8 +190,8 @@ The spec frames the code+config work as a single combined migration commit (T1).
 | ✅ **T1e** | Rewire `ContactForm.tsx` to JSON `fetch('/api/contact')`; strip Netlify attrs/honeypot | `web-app/src/components/ContactForm.tsx` (MODIFY) | US-2 form-submit AC | build + format | no |
 | ✅ **T1f** | Add `.github/workflows/deploy.yml` (deploy command: `wrangler pages deploy --project-name=awsome-nz` with `working-directory: web-app`) | `.github/workflows/deploy.yml` (NEW) | US-3 CD ACs | n/a (YAML only) | **YES — PROTECTED PATH; human override required before write** |
 | ✅ **T1-review** | Adversarial reviewer pass on full combined diff | all above | — | — | no |
-| **T2** | DNS / custom-domain cutover (see §10) | — (dashboard/registrar) | US-4 ACs | manual | human-only |
-| **T3** | End-to-end smoke test on live Cloudflare deployment | — | all US ACs | manual | human-only |
+| ✅ **T2** | DNS / custom-domain cutover (see §10) | — (dashboard/registrar) | US-4 ACs | manual | human-only |
+| ✅ **T3** | End-to-end smoke test on live Cloudflare deployment | — | all US ACs | manual | human-only |
 
 **Execution order**: T1a → T1b → T1c → T1d → T1e → T1f → T1-review → single commit → T2 → T3.
 
