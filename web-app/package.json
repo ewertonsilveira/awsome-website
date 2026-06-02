@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build && tsc --noEmit",
-    "deploy:cf": "wrangler pages deploy --project-name=awsome-nz",
+    "deploy:cf": "wrangler pages deploy --project-name=awsome-website",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "vite preview",
