@@ -150,6 +150,7 @@ export const onRequestPost = async (
   // Send email via Resend — increment the counter only on success so that
   // Resend failures do not consume the user's rate-limit allowance.
   if (!env.RESEND_API_KEY) {
+    console.error('contact: RESEND_API_KEY is not set');
     return json({ ok: false, error: 'send_failed' }, 500);
   }
 
@@ -173,6 +174,7 @@ export const onRequestPost = async (
   });
 
   if (sendError) {
+    console.error('contact: Resend send failed', sendError);
     return json({ ok: false, error: 'send_failed' }, 500);
   }
 
