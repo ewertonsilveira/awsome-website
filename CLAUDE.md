@@ -150,6 +150,7 @@ See `.claude/agents/`:
 | `reviewer` | Adversarial critic pass on every task diff and on the full PR |
 | `security-auditor` | Threat model, secrets audit, dependency CVE scan |
 | `sre-incident` | Production anomaly triage; does NOT execute changes |
+| `pr-publisher` | Opens/updates a GitHub PR from the current branch (push + `gh pr create`/`edit`); mechanical delivery only — no review, no merge |
 
 ---
 
@@ -165,3 +166,4 @@ See `.claude/commands/`:
 | `/test` | Generates or extends tests for a specific file or module |
 | `/review` | Runs an adversarial review of the current diff |
 | `/pr-prep` | Produces the PR description + risk summary |
+| `/pr-create` | Opens (or updates) the GitHub PR via the `pr-publisher` subagent; reuses the `/pr-prep` body |
