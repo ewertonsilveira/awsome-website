@@ -18,7 +18,6 @@
     "@tanstack/react-start": "^1.168.18",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "resend": "^6.12.4",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },

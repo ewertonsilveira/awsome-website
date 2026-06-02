@@ -1,10 +1,10 @@
 import type { EventContext, KVNamespace } from '@cloudflare/workers-types';
-import { Resend } from 'resend';
 import { z } from 'zod';
 
 interface Env {
   RATE_LIMIT: KVNamespace;
-  RESEND_API_KEY: string;
+  CF_EMAIL_API_TOKEN: string;
+  CF_ACCOUNT_ID: string;
 }
 
 const ContactSchema = z.object({
@@ -31,6 +31,61 @@ function json(
       ...headers,
     },
   });
+}
+
+// Isolated so the beta Email Service contract lives in one place (ADR-03).
+// Returns null on success, or an Error to log on failure.
+async function sendContactEmail(
+  env: Env,
+  fields: {
+    name: string;
+    email: string;
+    phone?: string;
+    service?: string;
+    message: string;
+  },
+): Promise<Error | null> {
+  if (!env.CF_EMAIL_API_TOKEN || !env.CF_ACCOUNT_ID) {
+    return new Error('CF_EMAIL_API_TOKEN or CF_ACCOUNT_ID is not set');
+  }
+
+  const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const lines: string[] = [
+    `Name: ${fields.name}`,
+    `Email: ${fields.email}`,
+    fields.phone ? `Phone: ${fields.phone}` : null,
+    fields.service ? `Service: ${fields.service}` : null,
+    '',
+    'Message:',
+    fields.message,
+  ].filter((line): line is string => line !== null);
+
+  const endpoint = `https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/email/sending/send`;
+
+  // Flat body per the live REST reference (not personalizations[]).
+  // Both text and html are sent as a fail-safe since the beta docs lead with html.
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.CF_EMAIL_API_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'john@awsome.co.nz',
+      to: 'john@awsome.co.nz',
+      subject: `${fields.name} via awsome.co.nz`,
+      text: lines.join('\n'),
+      html: `<pre>${lines.map(esc).join('<br>')}</pre>`,
+    }),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '<no body>');
+    return new Error(`Email Service responded ${res.status}: ${detail}`);
+  }
+  return null;
 }
 
 export const onRequestPost = async (
@@ -147,34 +202,17 @@ export const onRequestPost = async (
     });
   }
 
-  // Send email via Resend — increment the counter only on success so that
-  // Resend failures do not consume the user's rate-limit allowance.
-  if (!env.RESEND_API_KEY) {
-    console.error('contact: RESEND_API_KEY is not set');
-    return json({ ok: false, error: 'send_failed' }, 500);
-  }
-
-  const resend = new Resend(env.RESEND_API_KEY);
-
-  const lines: string[] = [
-    `Name: ${name}`,
-    `Email: ${email}`,
-    phone ? `Phone: ${phone}` : null,
-    service ? `Service: ${service}` : null,
-    '',
-    'Message:',
+  // Send email via Cloudflare Email Service — increment the counter only on
+  // success so that send failures do not consume the user's rate-limit allowance.
+  const sendError = await sendContactEmail(env, {
+    name,
+    email,
+    phone,
+    service,
     message,
-  ].filter((line): line is string => line !== null);
-
-  const { error: sendError } = await resend.emails.send({
-    from: 'john@awsome.co.nz',
-    to: 'john@awsome.co.nz',
-    subject: `${name} via awsome.co.nz`,
-    text: lines.join('\n'),
   });
-
   if (sendError) {
-    console.error('contact: Resend send failed', sendError);
+    console.error('contact: email send failed', sendError);
     return json({ ok: false, error: 'send_failed' }, 500);
   }
 
